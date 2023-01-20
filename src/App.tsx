@@ -4,9 +4,10 @@ import './index.css'
 import { Image, Layer, Stage ,Rect} from 'react-konva';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { Vector2d } from 'konva/lib/types';
+import Polygonal from './components/Polygonal';
 
 
-type Point={
+export type Point={
   x: number,
   y: number
 }
@@ -65,17 +66,36 @@ function App() {
 
   const [startBox, setStartBox] = useState<Vector2d | null>(null);
   const handleMouseDown = (e: KonvaEventObject<MouseEvent>)=>{
-    console.log("HI", selectedAnnotation, annotations)
-    if (selectedAnnotation !=null && annotations[selectedAnnotation].type == "Box"){
-      console.log("passed fist")
-      const stage = e.currentTarget.getStage();
-      if (stage){
-        const mousePos = stage.getPointerPosition();
-        if (mousePos){
-          console.log("GOT TO SET BOX")
-          setStartBox(mousePos);
+    // Important to do a not null check here rather than simple a truthy check because the selectedAnnotation
+    // is an index of an array and therefore can be 0 which will fail the truthy check but pass the non-null
+    if (selectedAnnotation !=null){
+
+        if ( annotations[selectedAnnotation].type == "Box"){
+          const stage = e.currentTarget.getStage();
+          if (stage){
+            const mousePos = stage.getPointerPosition();
+            if (mousePos){
+              setStartBox(mousePos);
+            }
+          }
+        } else if (annotations[selectedAnnotation].type == "Polygonal"){
+          console.log("hi")
+          const stage = e.currentTarget.getStage();
+          if (stage){
+            const mousePos = stage.getPointerPosition();
+            if (mousePos){
+              setAnnotations(prev=>{
+                const prevPoints = prev[selectedAnnotation].points;
+                prev[selectedAnnotation] = {
+                  ...prev[selectedAnnotation],
+                  points: [...prevPoints, {x: mousePos.x, y:mousePos.y}]
+                }
+
+                return [...prev];
+              })
+            }
+          }
         }
-      }
     }
   }
   // const [startBox, setStartBox];
@@ -117,6 +137,7 @@ function App() {
 
   }
   const handleDeleteAnnotation = (ix: number)=>{
+    if (ix == selectedAnnotation) setSelectedAnnotation(null);
     setAnnotations(prev=>{
       return prev.filter((i,idx)=>idx != ix);
     })
@@ -140,7 +161,9 @@ function App() {
                 const end = i.points[1];
                 const width = end.x - start.x;
                 const height = end.y - start.y;
-                return <Rect stroke={"red"} x={start.x} y={start.y} width={width} height={height}></Rect>
+                return <Rect stroke={"red"} strokeWidth={ix == selectedAnnotation ? 5: 2}  x={start.x} y={start.y} width={width} height={height}></Rect>
+              } else if (i.type == "Polygonal" && i.points.length > 0){
+                return <Polygonal selected={selectedAnnotation == ix} points={i.points}></Polygonal>
               }
             })}
           </Layer>
