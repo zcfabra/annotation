@@ -67,6 +67,11 @@ function App() {
   }, [sizeRef]);
 
   const [startBox, setStartBox] = useState<Vector2d | null>(null);
+
+  useEffect(()=>{
+    console.log(annotations)
+  }, [annotations])
+
   const handleMouseDown = (e: KonvaEventObject<MouseEvent>)=>{
     // Important to do a not null check here rather than simple a truthy check because the selectedAnnotation
     // is an index of an array and therefore can be 0 which will fail the truthy check but pass the non-null
@@ -85,9 +90,13 @@ function App() {
           const stage = e.currentTarget.getStage();
           if (stage){
             const mousePos = stage.getPointerPosition();
-            if (mousePos){
-              
-
+            if (mousePos){         
+                const lengthOfList = annotations[selectedAnnotation].points.length; 
+              // Ok so this check is very hacky. I probably should extract the completedShape logic out into the Annotation Class
+              // although I do like having the same api for both types of annotation class      
+              if (lengthOfList >3 && annotations[selectedAnnotation].points[0].x == annotations[selectedAnnotation].points[lengthOfList - 1].x && annotations[selectedAnnotation].points[0].y == annotations[selectedAnnotation].points[lengthOfList - 1].y ){
+                return;
+              }
                 setAnnotations(prev=>{
                   const prevPoints = prev[selectedAnnotation].points;
                   // if the start point is being hovered, this will close the shape by adding
@@ -150,9 +159,37 @@ function App() {
       return prev.filter((i,idx)=>idx != ix);
     })
   }
+
+  const handleUndoPolygon = ()=>{
+    if (selectedAnnotation!=null){
+      console.log("YO")
+      setAnnotations(prev=>{
+        prev[selectedAnnotation] = {
+          ...prev[selectedAnnotation],
+          points: prev[selectedAnnotation].points.slice(0,-1)
+        }
+        return [...prev]
+      })
+    }
+  }
+  const handleClearPolygon = ()=>{
+    if (selectedAnnotation!=null){
+      setAnnotations(prev=>{
+        prev[selectedAnnotation]={
+          ...prev[selectedAnnotation],
+          points: []
+        }
+        return [...prev];
+      })
+    }
+  }
   return (
     <div className="w-full h-screen bg-black flex flex-row">
-      <div ref={sizeRef} className='w-9/12 h-full'>
+      <div ref={sizeRef} className='relative w-9/12 h-full'>
+        {selectedAnnotation != null && annotations[selectedAnnotation].type == "Polygonal" && annotations[selectedAnnotation].points.length>0 && <div className='z-20 w-42 h-8  text-white absolute top-4 right-4 flex items-center justify-center'>
+          <button onClick={handleUndoPolygon}className='w-16 h-8 rounded-md border border-gray-500 mx-1 hover:bg-purple-500 transition-all'>Undo</button>
+          <button onClick={handleClearPolygon}className='w-16 h-8 rounded-md border border-gray-500 mx-1 hover:bg-purple-500 transition-all'>Clear</button>
+        </div> }
         <Stage
           width={size?.x || 0}
           height={size?.y || 0}
@@ -171,7 +208,7 @@ function App() {
                 const height = end.y - start.y;
                 return <Rect stroke={"red"} strokeWidth={ix == selectedAnnotation ? 5: 2}  x={start.x} y={start.y} width={width} height={height}></Rect>
               } else if (i.type == "Polygonal" && i.points.length > 0){
-                return <Polygonal isMouseOverStartPoint={isMouseOverStartPoint}setIsMouseOverStartPoint={setIsMouseOverStartPoint} setAnnotations={setAnnotations} selected={selectedAnnotation == ix} points={i.points}></Polygonal>
+                return <Polygonal idx={ix} isMouseOverStartPoint={isMouseOverStartPoint}setIsMouseOverStartPoint={setIsMouseOverStartPoint} setAnnotations={setAnnotations} selected={selectedAnnotation == ix} points={i.points}></Polygonal>
               }
             })}
           </Layer>
@@ -180,15 +217,18 @@ function App() {
 
       </div>
       <div className='h-full w-3/12 flex flex-col items-center'>
-        <div className='w-full h-1/6 p-8 '>
+        <div className='w-full h-[20%] p-8 flex flex-col '>
+          <span className='text-xl text-white mb-4'>Image</span>
           {image == null
           ? 
-           <input type="file" accept="image/*" multiple={false} onChange={handleImageUpload} />
+          <input type="file" accept="image/*" multiple={false} onChange={handleImageUpload} />
           : 
           <button onClick={()=>setImage(null)}className='w-24 h-12 rounded-md border border-gray-500 text-white'>Delete</button> }
 
         </div>
-        <div className='w-full h-1/6 border-y border border-gray-500 pt-8 px-8 flex flex-col'>
+        <div className='w-full h-[30%] border-y border border-gray-500 pt-8 px-8 flex flex-col'>
+          <span className='text-xl text-white mb-4
+          '>New Annotation</span>
           <input value={label} onChange={(e)=>setLabel(e.target.value)} type="text" placeholder='Label' className='px-4 bg-transparent text-white h-10 border border-gray-500 rounded-md'/>
           <div className='w-full h-10 mt-4 flex'>
 
@@ -197,10 +237,10 @@ function App() {
             <button onClick={handleCreateNewAnnotation}className='w-10 rounded-md text-white ml-auto h-10 border border-gray-500'>+</button>
           </div>
         </div>
-        <div className='w-full h-4/6 overflow-y-auto'>
+        <div className='w-full h-[50%] overflow-y-auto'>
           {annotations.map((i,ix)=>(
             <div onClick={() => setSelectedAnnotation(ix == selectedAnnotation ? null : ix)} className={`w-full flex cursor-pointer h-16 text-white  pt-4 px-8 ${selectedAnnotation == ix && "bg-purple-500 "} border-b border-gray-500`}>
-              <span>{i.label}</span>
+              <span className='text-white'>{i.label == "" ? "Unlabeled" : i.label}</span>
               <button onClick={()=>handleDeleteAnnotation(ix)} className='ml-auto text-white w-16 h-8 rounded-md border border-gray-500'>Delete</button>
             </div>
             ))}
