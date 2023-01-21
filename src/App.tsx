@@ -271,7 +271,7 @@ function App() {
 
       </div>
       <div className='h-full w-3/12 flex flex-col items-center'>
-        <div className='w-full h-[15%] p-8 flex flex-col '>
+        <div className='w-full h-[15%] px-8 pt-4 flex flex-col '>
           <span className='text-xl text-white mb-4'>Image</span>
           {image == null
           ? 
@@ -280,17 +280,20 @@ function App() {
           <button onClick={()=>setImage(null)}className='w-24 h-12 rounded-md border border-gray-500 text-white'>Delete</button> }
 
         </div>
-        <div className='w-full h-[25%] border-y border border-gray-500 px-8 py-4 flex'>
-          <div className='w-6/12 h-full'>
-            <input onChange={(e)=>setCurrentClass({class: e.target.value, colorHex: "red"})}value={currentClass ? currentClass.class : ""} className="w-40 h-8 rounded-md border border-gray-500  bg-black  text-white px-4 "type="text" placeholder='New Class'/>
-            <div className='w-full flex mt-2'>
+        <div className='w-full h-[25%] border-y border border-gray-500  flex'>
+          <div className='w-6/12 p-8 pt-4  h-full flex flex-col'>
+            <span className='text-xl text-white mb-4'>Class</span>
+            <div className='w-full flex'>
+            <input onChange={(e)=>setCurrentClass({class: e.target.value, colorHex: "red"})}value={currentClass ? currentClass.class : ""} className="w-36 h-8 rounded-md border border-gray-500  bg-black  text-white px-4 "type="text" placeholder='New Class'/>
+            </div>
+            <div className='w-full  flex mt-2'>
               {currentClass && Object.keys(colorMap).map(i=>{
-                return <div onClick={()=>setCurrentClass(prev=>({class:prev!.class, colorHex: i}))} className={`w-4 ${currentClass && i == currentClass.colorHex && "border-2 border-white"} h-4 mx-2 ${colorMap[i as keyof object]}`}></div>
+                return <div onClick={()=>setCurrentClass(prev=>({class:prev!.class, colorHex: i}))} className={`w-4 ${currentClass && i == currentClass.colorHex && "border-2 border-white"} h-4  ${colorMap[i as keyof object]}`}></div>
               })}
             </div>
             {currentClass && currentClass.class != "" && <button onClick={handleAddClass} className='w-24 mt-4 h-8 rounded-md border border-gray-500 text-white'>Add</button>}
           </div>
-          <div className='w-6/12 h-full overflow-y-auto'>
+          <div className='w-6/12 h-full pt-4 overflow-y-auto'>
             {classes.map((i,ix)=>(
               <div className='w-full px-2 flex items-center h-12 text-white border-b border-gray-500 '>
                 <span>{i.class}</span>
