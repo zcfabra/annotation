@@ -12,7 +12,7 @@ export type Point={
   y: number
 }
 
-interface Annotation{
+export interface Annotation{
   label: string, 
   points: Point[],
   type: string
@@ -28,6 +28,8 @@ function App() {
   const [label, setLabel] = useState<string>("")
   const [imageSize, setImageSize] = useState<{x:number,y:number,h:number,w:number} | null>(null);
   const [selectedAnnotation, setSelectedAnnotation] = useState<number | null>(null);
+
+  const [isMouseOverStartPoint, setIsMouseOverStartPoint] = useState<boolean>(false);
 
   /* Takes in an image from an HTML upload, then converts it into an image bitmap (a suitable form for drawing onto a canvas)
   Then, it scales the image down to fit and be centered within the canvas. The width of the canvas is accessed via a ref
@@ -84,15 +86,21 @@ function App() {
           if (stage){
             const mousePos = stage.getPointerPosition();
             if (mousePos){
-              setAnnotations(prev=>{
-                const prevPoints = prev[selectedAnnotation].points;
-                prev[selectedAnnotation] = {
-                  ...prev[selectedAnnotation],
-                  points: [...prevPoints, {x: mousePos.x, y:mousePos.y}]
-                }
+              
 
-                return [...prev];
-              })
+                setAnnotations(prev=>{
+                  const prevPoints = prev[selectedAnnotation].points;
+                  // if the start point is being hovered, this will close the shape by adding
+                  // the final point which is a clone of the starting point
+                  const pointToAdd = isMouseOverStartPoint ? prevPoints[0] : { x: mousePos.x, y: mousePos.y }
+                  prev[selectedAnnotation] = {
+                    ...prev[selectedAnnotation],
+        
+                    points: [...prevPoints, pointToAdd]
+                  }
+                  
+                  return [...prev];
+                })
             }
           }
         }
@@ -163,7 +171,7 @@ function App() {
                 const height = end.y - start.y;
                 return <Rect stroke={"red"} strokeWidth={ix == selectedAnnotation ? 5: 2}  x={start.x} y={start.y} width={width} height={height}></Rect>
               } else if (i.type == "Polygonal" && i.points.length > 0){
-                return <Polygonal selected={selectedAnnotation == ix} points={i.points}></Polygonal>
+                return <Polygonal isMouseOverStartPoint={isMouseOverStartPoint}setIsMouseOverStartPoint={setIsMouseOverStartPoint} setAnnotations={setAnnotations} selected={selectedAnnotation == ix} points={i.points}></Polygonal>
               }
             })}
           </Layer>
@@ -191,7 +199,7 @@ function App() {
         </div>
         <div className='w-full h-4/6 overflow-y-auto'>
           {annotations.map((i,ix)=>(
-            <div onClick={() => setSelectedAnnotation(ix)} className={`w-full flex cursor-pointer h-16 text-white  pt-4 px-8 ${selectedAnnotation == ix && "bg-purple-500 "} border-b border-gray-500`}>
+            <div onClick={() => setSelectedAnnotation(ix == selectedAnnotation ? null : ix)} className={`w-full flex cursor-pointer h-16 text-white  pt-4 px-8 ${selectedAnnotation == ix && "bg-purple-500 "} border-b border-gray-500`}>
               <span>{i.label}</span>
               <button onClick={()=>handleDeleteAnnotation(ix)} className='ml-auto text-white w-16 h-8 rounded-md border border-gray-500'>Delete</button>
             </div>
