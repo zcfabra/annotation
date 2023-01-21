@@ -6,7 +6,6 @@ import { KonvaEventObject } from 'konva/lib/Node';
 import { Vector2d } from 'konva/lib/types';
 import Polygonal from './components/Polygonal';
 
-
 export type Point={
   x: number,
   y: number
@@ -31,6 +30,8 @@ function App() {
 
   const [isMouseOverStartPoint, setIsMouseOverStartPoint] = useState<boolean>(false);
 
+
+  
   /* Takes in an image from an HTML upload, then converts it into an image bitmap (a suitable form for drawing onto a canvas)
   Then, it scales the image down to fit and be centered within the canvas. The width of the canvas is accessed via a ref
   */

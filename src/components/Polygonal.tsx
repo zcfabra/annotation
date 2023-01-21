@@ -18,6 +18,10 @@ const Polygonal: React.FC<PolygonalProps> = ({points, selected, setAnnotations, 
     // The konva JS line element takes in a flat list of points in the form of [x1, y1, x2, y2, etc...], so it is important to perform
     // this transformation whenever the point data changes
     useEffect(()=>{
+        if (closedShape){
+            // this checks if the closed shape has been undone
+            if (points[0].x != points[points.length -1].x && points[0].y != points[points.length -1].y) setClosedShape(false);
+        }
         const flat = [];
         for (let point of points){
             flat.push(point.x);
