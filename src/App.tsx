@@ -282,7 +282,7 @@ function App() {
         </div>
         <div className='w-full h-[25%] border-y border border-gray-500 px-8 py-4 flex'>
           <div className='w-6/12 h-full'>
-            <input onChange={(e)=>setCurrentClass({class: e.target.value, colorHex: "#ff0000"})}value={currentClass ? currentClass.class : ""} className="w-40 h-8 rounded-md border border-gray-500  bg-black  text-white px-4 "type="text" placeholder='New Class'/>
+            <input onChange={(e)=>setCurrentClass({class: e.target.value, colorHex: "red"})}value={currentClass ? currentClass.class : ""} className="w-40 h-8 rounded-md border border-gray-500  bg-black  text-white px-4 "type="text" placeholder='New Class'/>
             <div className='w-full flex mt-2'>
               {currentClass && Object.keys(colorMap).map(i=>{
                 return <div onClick={()=>setCurrentClass(prev=>({class:prev!.class, colorHex: i}))} className={`w-4 ${currentClass && i == currentClass.colorHex && "border-2 border-white"} h-4 mx-2 ${colorMap[i as keyof object]}`}></div>
@@ -315,10 +315,10 @@ function App() {
           {annotations.map((i,ix)=>(
             <div onClick={() => setSelectedAnnotation(ix == selectedAnnotation ? null : ix)} className={`w-full flex items-center cursor-pointer h-16 text-white  pt-4 px-8 ${selectedAnnotation == ix && "bg-purple-500 "} border-b border-gray-500`}>
               <span className='text-white'>{i.label == "" ? "Unlabeled" : i.label}</span>
-              {i.class && <div className={`mr-2 w-2 h-2 rounded-md ${findTailwindColorCodeForClass(i.class)}`}></div>}
+              {i.class && <div className={`ml-2 w-2 h-2 rounded-md ${findTailwindColorCodeForClass(i.class)}`}></div>}
               <div className='ml-auto flex'>
                 
-              { classes.length > 0 && <select onChange={(e)=>handleSetAnnotationClass(e, ix)}value={i.class} className="h-8 border border-gray-500 rounded-md w-28 mr-2 bg-black text-white"name="" id="">
+              { classes.length > 0 && <select onClick={(e)=>e.stopPropagation()} onChange={(e)=>handleSetAnnotationClass(e, ix)}value={i.class} className="h-8 px-2 border border-gray-500 rounded-md w-28 mr-2 bg-black text-white"name="" id="">
                 <option value="" selected disabled>Select...</option>
                 {
                   classes.map((i,ix)=> <option value={i.class}>{i.class}</option> )
