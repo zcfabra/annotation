@@ -8,10 +8,11 @@ interface PolygonalProps {
     setAnnotations: React.Dispatch<React.SetStateAction<Annotation[]>>,
     setIsMouseOverStartPoint: React.Dispatch<React.SetStateAction<boolean>>,
     isMouseOverStartPoint: boolean,
-    idx: number
+    idx: number,
+    color?: string
 
 }
-const Polygonal: React.FC<PolygonalProps> = ({points, selected, setAnnotations, setIsMouseOverStartPoint, isMouseOverStartPoint, idx}) => {
+const Polygonal: React.FC<PolygonalProps> = ({points, selected, setAnnotations, setIsMouseOverStartPoint, isMouseOverStartPoint, color, idx}) => {
     const [closedShape, setClosedShape] = useState<boolean>(false);
     const [flatMapPoints, setFlatMapPoints] = useState<number[]>([]);
 
@@ -86,13 +87,13 @@ const Polygonal: React.FC<PolygonalProps> = ({points, selected, setAnnotations, 
         draggable={closedShape}
 
     >
-        <Line points={flatMapPoints} stroke={"red"} strokeWidth={selected ? 4 : 2}></Line>
+        <Line points={flatMapPoints} stroke={color?color:"blue"} strokeWidth={selected ? 4 : 2}></Line>
      {points.map((i,ix)=>{
         return <Rect
             draggable={selected}
             x={i.x - 5}
             y={i.y - 5 }
-            fill='red'
+            fill= {color ? color : "blue"}
             
             width={10}
             height={10}

@@ -14,20 +14,34 @@ export type Point={
 export interface Annotation{
   label: string, 
   points: Point[],
-  type: string
+  type: string,
+  class?: string,
+  classColor?: string,
 }
 
+export type ClassData ={
+  class: string, 
+  colorHex: string, 
+}
+
+export const colorMap={
+  "red": "bg-red-500",
+  "Orchid": "bg-purple-500",
+  "Lime": "bg-lime-500",
+  "Cyan": "bg-cyan-500",
+  "HotPink": "bg-pink-500",
+  "DarkOrange": "bg-orange-500"
+}
 
 function App() {
   const [image, setImage] = useState<ImageBitmap | HTMLImageElement  | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [annotationType, setAnnotationType] = useState<string>("Box");
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [boxStartingPoint, setBoxStartingPoint] = useState<{x:number,y:number} | null>(null);
   const [label, setLabel] = useState<string>("")
   const [imageSize, setImageSize] = useState<{x:number,y:number,h:number,w:number} | null>(null);
   const [selectedAnnotation, setSelectedAnnotation] = useState<number | null>(null);
-
+  const [classes, setClasses] = useState<ClassData[]>([]);
+  const [currentClass, setCurrentClass] = useState<ClassData|null>(null);
   const [isMouseOverStartPoint, setIsMouseOverStartPoint] = useState<boolean>(false);
 
 
@@ -41,6 +55,7 @@ function App() {
       const arrayBuffer = await img.arrayBuffer();
       const mid = new Blob([new Uint8Array(arrayBuffer)]);
       const bitmap = await createImageBitmap(mid);
+
       setImage(bitmap);
       if (sizeRef.current){
 
@@ -184,6 +199,44 @@ function App() {
       })
     }
   }
+
+  const handleAddClass=()=>{
+    if (currentClass) {
+      let className = currentClass.class
+      while (classes.find(i=>i.class == className) != undefined){
+        className += "_"
+      }
+      setClasses(prev=>[...prev, {class: className, colorHex: currentClass.colorHex}])
+    } 
+    setCurrentClass(null);
+  }
+
+  const handleSetAnnotationClass = (e: React.ChangeEvent<HTMLSelectElement>, ix: number)=>{
+
+    setAnnotations(prev=>{
+      const findColor = classes.find(i=>i.class == e.target.value);
+      if (findColor) {
+        prev[ix] = {
+          ...prev[ix],
+          class: e.target.value,
+          classColor:findColor.colorHex
+        } 
+      } else {
+        prev[ix]={
+          ...prev[ix],
+          class:e.target.value,
+        }
+      }
+      return [...prev];
+    });
+
+  }
+
+  const findTailwindColorCodeForClass= (soughtClass: string):string | null=>{
+    const classData = classes.find(i=>i.class==soughtClass);
+    if (classData) return colorMap[classData.colorHex as keyof object] 
+    else return null;
+  }
   return (
     <div className="w-full h-screen bg-black flex flex-row">
       <div ref={sizeRef} className='relative w-9/12 h-full'>
@@ -207,9 +260,9 @@ function App() {
                 const end = i.points[1];
                 const width = end.x - start.x;
                 const height = end.y - start.y;
-                return <Rect stroke={"red"} strokeWidth={ix == selectedAnnotation ? 5: 2}  x={start.x} y={start.y} width={width} height={height}></Rect>
+                return <Rect   stroke={i.classColor ? i.classColor : "blue"} strokeWidth={ix == selectedAnnotation ? 5: 2}  x={start.x} y={start.y} width={width} height={height}></Rect>
               } else if (i.type == "Polygonal" && i.points.length > 0){
-                return <Polygonal idx={ix} isMouseOverStartPoint={isMouseOverStartPoint}setIsMouseOverStartPoint={setIsMouseOverStartPoint} setAnnotations={setAnnotations} selected={selectedAnnotation == ix} points={i.points}></Polygonal>
+                return <Polygonal color={i.classColor} idx={ix} isMouseOverStartPoint={isMouseOverStartPoint}setIsMouseOverStartPoint={setIsMouseOverStartPoint} setAnnotations={setAnnotations} selected={selectedAnnotation == ix} points={i.points}></Polygonal>
               }
             })}
           </Layer>
@@ -218,7 +271,7 @@ function App() {
 
       </div>
       <div className='h-full w-3/12 flex flex-col items-center'>
-        <div className='w-full h-[20%] p-8 flex flex-col '>
+        <div className='w-full h-[15%] p-8 flex flex-col '>
           <span className='text-xl text-white mb-4'>Image</span>
           {image == null
           ? 
@@ -227,7 +280,27 @@ function App() {
           <button onClick={()=>setImage(null)}className='w-24 h-12 rounded-md border border-gray-500 text-white'>Delete</button> }
 
         </div>
-        <div className='w-full h-[30%] border-y border border-gray-500 pt-8 px-8 flex flex-col'>
+        <div className='w-full h-[25%] border-y border border-gray-500 px-8 py-4 flex'>
+          <div className='w-6/12 h-full'>
+            <input onChange={(e)=>setCurrentClass({class: e.target.value, colorHex: "#ff0000"})}value={currentClass ? currentClass.class : ""} className="w-40 h-8 rounded-md border border-gray-500  bg-black  text-white px-4 "type="text" placeholder='New Class'/>
+            <div className='w-full flex mt-2'>
+              {currentClass && Object.keys(colorMap).map(i=>{
+                return <div onClick={()=>setCurrentClass(prev=>({class:prev!.class, colorHex: i}))} className={`w-4 ${currentClass && i == currentClass.colorHex && "border-2 border-white"} h-4 mx-2 ${colorMap[i as keyof object]}`}></div>
+              })}
+            </div>
+            {currentClass && currentClass.class != "" && <button onClick={handleAddClass} className='w-24 mt-4 h-8 rounded-md border border-gray-500 text-white'>Add</button>}
+          </div>
+          <div className='w-6/12 h-full overflow-y-auto'>
+            {classes.map((i,ix)=>(
+              <div className='w-full px-2 flex items-center h-12 text-white border-b border-gray-500 '>
+                <span>{i.class}</span>
+                <div className={`ml-4 w-2 h-2 rounded-md ${colorMap[i.colorHex as keyof object]}`}></div>
+                <button onClick={()=>setClasses(prev=>prev.filter((i,idx)=>idx != ix))}className='text-white ml-auto'>X</button>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className='w-full h-[20%] border-y border border-gray-500 pt-4 px-8 flex flex-col'>
           <span className='text-xl text-white mb-4
           '>New Annotation</span>
           <input value={label} onChange={(e)=>setLabel(e.target.value)} type="text" placeholder='Label' className='px-4 bg-transparent text-white h-10 border border-gray-500 rounded-md'/>
@@ -238,11 +311,21 @@ function App() {
             <button onClick={handleCreateNewAnnotation}className='w-10 rounded-md text-white ml-auto h-10 border border-gray-500'>+</button>
           </div>
         </div>
-        <div className='w-full h-[50%] overflow-y-auto'>
+        <div className='w-full h-[40%] overflow-y-auto'>
           {annotations.map((i,ix)=>(
-            <div onClick={() => setSelectedAnnotation(ix == selectedAnnotation ? null : ix)} className={`w-full flex cursor-pointer h-16 text-white  pt-4 px-8 ${selectedAnnotation == ix && "bg-purple-500 "} border-b border-gray-500`}>
+            <div onClick={() => setSelectedAnnotation(ix == selectedAnnotation ? null : ix)} className={`w-full flex items-center cursor-pointer h-16 text-white  pt-4 px-8 ${selectedAnnotation == ix && "bg-purple-500 "} border-b border-gray-500`}>
               <span className='text-white'>{i.label == "" ? "Unlabeled" : i.label}</span>
-              <button onClick={()=>handleDeleteAnnotation(ix)} className='ml-auto text-white w-16 h-8 rounded-md border border-gray-500'>Delete</button>
+              {i.class && <div className={`mr-2 w-2 h-2 rounded-md ${findTailwindColorCodeForClass(i.class)}`}></div>}
+              <div className='ml-auto flex'>
+                
+              { classes.length > 0 && <select onChange={(e)=>handleSetAnnotationClass(e, ix)}value={i.class} className="h-8 border border-gray-500 rounded-md w-28 mr-2 bg-black text-white"name="" id="">
+                <option value="" selected disabled>Select...</option>
+                {
+                  classes.map((i,ix)=> <option value={i.class}>{i.class}</option> )
+                }</select>
+              }
+              <button onClick={()=>handleDeleteAnnotation(ix)} className=' text-white w-16 h-8 rounded-md border border-gray-500'>Delete</button>
+              </div>
             </div>
             ))}
         </div>
